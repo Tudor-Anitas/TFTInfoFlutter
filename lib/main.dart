@@ -1,10 +1,14 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_page_transition/flutter_page_transition.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:tft_gg/info.dart';
 import 'package:tft_gg/loading_page.dart';
 import 'package:tft_gg/results_page.dart';
+import 'package:tft_gg/trait.dart';
+import 'package:tft_gg/unit.dart';
 
 import 'networking.dart';
 
@@ -33,12 +37,17 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
 
   TextEditingController summonerController = TextEditingController();
+  Info playerInfo = Info();
+
+  String region = 'eun1';
 
   @override
   Widget build(BuildContext context) {
 
     double windowWidth = MediaQuery.of(context).size.width;
     double windowHeight = MediaQuery.of(context).size.height;
+
+
 
 
     return Scaffold(
@@ -86,21 +95,57 @@ class _SearchPageState extends State<SearchPage> {
             //------------------------ search bar
             Container(
               width: windowWidth * 0.8,
-              height: windowHeight * 0.07,
-              margin: EdgeInsets.only(top: windowHeight * 0.05),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8)
-              ),
-              child: TextField(
-                decoration: InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-                  border: InputBorder.none,
-                ),
-                controller: summonerController,
-                style: TextStyle(
-                  fontSize: 24
-                ),
+              child: Row(
+                children: [
+                  Container(
+                    width: windowWidth * 0.65,
+                    height: windowHeight * 0.07,
+                    margin: EdgeInsets.only(top: windowHeight * 0.05),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(topLeft: Radius.circular(8), bottomLeft: Radius.circular(8))
+                    ),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+                        border: InputBorder.none,
+                      ),
+                      controller: summonerController,
+                      style: TextStyle(
+                        fontSize: 24
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: windowWidth * 0.15,
+                    height: windowHeight * 0.07,
+                    margin: EdgeInsets.only(top: windowHeight * 0.05),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(topRight: Radius.circular(8), bottomRight: Radius.circular(8))
+                    ),
+                    child: DropdownButton(
+                        value: region,
+                        items: [
+                          DropdownMenuItem(child: Text('EUNE'), value: 'eun1',),
+                          DropdownMenuItem(child: Text('EUW'), value: 'euw1',),
+                          DropdownMenuItem(child: Text('NA'), value: 'na1',),
+                          DropdownMenuItem(child: Text('KR'), value: 'kr',),
+                          DropdownMenuItem(child: Text('JP'), value: 'jp1',),
+                          DropdownMenuItem(child: Text('OCE'), value: 'oc1',),
+                          DropdownMenuItem(child: Text('RU'), value: 'ru',),
+                          DropdownMenuItem(child: Text('TUR'), value: 'tr1',),
+                          DropdownMenuItem(child: Text('BR'), value: 'br1',),
+                        ],
+                        underline: Container(),
+                        onChanged: (value){
+                          setState(() {
+                            region = value;
+                          });
+                        },
+                    ),
+                  )
+                ],
               ),
             ),
             //------------------------ button
@@ -114,27 +159,43 @@ class _SearchPageState extends State<SearchPage> {
               ),
               child: MaterialButton(
                 onPressed: () async {
-
+                  Map<String, dynamic> summonerData = Map();
                   Navigator.push(context, PageTransition(type: PageTransitionType.rippleLeftDown, child: LoadingPage()));
                   var start = DateTime.now();
 
-                  // get the puuid of the searched summoner
-                  String puuid = await ApiCalls().getSummoner(summonerController.text.trim());
-                  // get the last 20 matches of the player
-                  List<String> lastMatches = await ApiCalls().getMatches(puuid, 'europe');
+                  // get the puuid & the level of the searched summoner
+                  summonerData = await ApiCalls().getSummoner(summonerController.text.trim(), region);
+                  if(summonerData == null){
+                    SnackBar snackBar = SnackBar(content: Text('Summoner not found!'),);
+                    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                  } else {
+                    // try and get the rank of the player async
+                    ApiCalls().getRank(summonerData['id'], region).then((value) => playerInfo.league = value);
 
-                  // get the stats from the last matches
-                  List<Map<String,dynamic>> matchResults = [];
-                  for(int i=0; i<20; i++){
-                    Map<String,dynamic> match = await ApiCalls().getMatchDetails(puuid, lastMatches[i], 'europe');
-                    matchResults.add(match);
+                    String puuid = summonerData['puuid'];
+
+                    playerInfo.summonerName = summonerController.text.trim();
+                    playerInfo.summonerLevel = summonerData['summonerLevel'];
+                    // get the last 20 matches of the player
+                    List<String> lastMatches = await ApiCalls().getMatches(
+                        puuid, 'europe');
+
+                    // get the stats from the last matches
+                    List<Map<String, dynamic>> matchResults = [];
+                    for (int i = 0; i < 20; i++) {
+                      Map<String, dynamic> match = await ApiCalls()
+                          .getMatchDetails(puuid, lastMatches[i], 'europe');
+                      matchResults.add(match);
+                    }
+
+                    // calculate the general stats of the player
+                    calculateGeneralInfo(matchResults);
+                    var end = DateTime.now();
+
+                    print(end
+                        .difference(start)
+                        .inMilliseconds);
                   }
-
-                  // calculate the general stats of the player
-                  calculateGeneralInfo(matchResults);
-                  var end = DateTime.now();
-
-                  print(end.difference(start).inMilliseconds);
                 },
                 child: Text('Go', style: GoogleFonts.spaceGrotesk(fontSize: 24, color: Colors.white),),
               ),
@@ -150,36 +211,51 @@ class _SearchPageState extends State<SearchPage> {
     int dmgToPlayers = 0;
     Map<String, int> companions = Map();
     Map<int, int> placements = Map();
-    Map<String, int> traits = Map();
-    Map<String, int> units = Map();
-    Map<String, dynamic> stats = Map();
+    Map<String, Trait> traits = Map();
+    Map<String, Unit> units = Map();
+
+    // to avoid getting a null on a placement
+    for(int i = 0; i<8; i++)
+      placements[i+1] = 0;
 
 
+
+    // process the information from all the games to calculate averages
     for(var match in matches){
       playersEliminated += match['players_eliminated'];
       dmgToPlayers += match['total_damage_to_players'];
-
       if(companions.containsKey(match['companion']))
         companions[match['companion']] = companions[match['companion']] + 1;
       else
         companions[match['companion']] = 1;
 
-      if(placements.containsKey(match['placement']))
-        placements[match['placement']] = placements[match['placement']] + 1;
-      else
-        placements[match['placement']] = 1;
+      placements[match['placement']] = placements[match['placement']] + 1;
 
-      for(var trait in match['traits']){
-        if(traits.containsKey(trait.name))
-          traits[trait.name] = traits[trait.name] + 1;
-        else
-          traits[trait.name] = 1;
+      for(Trait trait in match['traits']){
+        if(traits.containsKey(trait.name)){
+          Trait current = traits[trait.name];
+          current.count += 1;
+          traits[trait.name] = current;
+        }
+        else{
+          Trait current = trait;
+          current.count = 1;
+          traits[trait.name] = current;
+        }
+      }
+      for(Unit unit in match['units']){
+        if(units.containsKey(unit.name)){
+          Unit current = units[unit.name];
+          current.count += 1;
+          units[unit.name] = current;
+        }
+        else{
+          Unit current = unit;
+          current.count = 1;
+          units[unit.name] = current;
+        }
       }
     }
-
-    stats['players_eliminated'] = playersEliminated;
-    stats['total_damage_to_players'] = dmgToPlayers;
-    stats['placements'] = placements;
 
     int maxOccurences = 0;
     String currentPet = '';
@@ -189,13 +265,34 @@ class _SearchPageState extends State<SearchPage> {
         currentPet = key;
       }
     });
-    stats['companion'] = currentPet;
+    // sorting the traits descending
+    print('BEFORE SORTING=============================================');
+    //traits.forEach((key, value) { print('${key.name} $value');});
+    var sortedTraitsKeys = traits.keys.toList(growable: false)..sort((k1, k2) => traits[k2].count.compareTo(traits[k1].count));
+    LinkedHashMap sortedTraits = LinkedHashMap.fromIterable(sortedTraitsKeys, key: (k) => k, value: (k) => traits[k]);
+    //print('BEFORE SORTING=============================================');
+    //sortedTraits.forEach((key, value) { print('$key ${value.count}');});
+
+    // sorting the units
+    print('BEFORE SORTING=============================================');
+    //units.forEach((key, value) { print('${key.name} $value');});
+    var sortedUnitsKeys = units.keys.toList(growable: false)..sort((k1,k2) => units[k2].count.compareTo(units[k1].count));
+    LinkedHashMap sortedUnits = LinkedHashMap.fromIterable(sortedUnitsKeys, key: (k) => k, value: (k) => units[k]);
+    print('AFTER SORTING==============================================');
+    //sortedUnits.forEach((key, value) { print('${key.name} $value');});
+
+    playerInfo.playersEliminated = playersEliminated;
+    playerInfo.dmgToPlayers = dmgToPlayers;
+    playerInfo.companion = currentPet;
+    playerInfo.placements = placements;
+    playerInfo.traits = sortedTraits;
+    playerInfo.units = sortedUnits;
 
     print('players eliminated $playersEliminated');
     print('total damage $dmgToPlayers');
-    print('placements ${stats['placements']}');
 
-    Navigator.push(context, PageTransition(child: ResultsPage(), type: PageTransitionType.rippleLeftDown));
+
+    Navigator.pushReplacement(context, PageTransition(child: ResultsPage(playerInfo: playerInfo,), type: PageTransitionType.rippleLeftDown));
   }
 }
 

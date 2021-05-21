@@ -5,15 +5,101 @@ import 'package:tft_gg/trait.dart';
 import 'package:tft_gg/unit.dart';
 
 class ApiCalls{
-  String _key = 'RGAPI-774aad37-8b2c-4005-b4f9-689df4dad8ab';
+  String _key = 'RGAPI-51f7df00-1077-4e64-979b-971fce3a6c56';
 
-  Future<String> getSummoner(String summonerName) async{
+  Future<Map<String, dynamic>> getSummoner(String summonerName, String region) async{
+    Uri uri; Uri.parse("https://eun1.api.riotgames.com/tft/summoner/v1/summoners/by-name/" + summonerName + "?api_key=" + _key);
 
-    Uri uri = Uri.parse("https://eun1.api.riotgames.com/tft/summoner/v1/summoners/by-name/" + summonerName + "?api_key=" + _key);
+    switch(region){
+      case 'br1':
+        uri = Uri.parse("https://br1.api.riotgames.com/tft/summoner/v1/summoners/by-name/" + summonerName + "?api_key=" + _key);
+        break;
+      case 'eun1':
+        uri = Uri.parse("https://eun1.api.riotgames.com/tft/summoner/v1/summoners/by-name/" + summonerName + "?api_key=" + _key);
+        break;
+      case 'euw1':
+        uri = Uri.parse("https://euw1.api.riotgames.com/tft/summoner/v1/summoners/by-name/" + summonerName + "?api_key=" + _key);
+        break;
+      case 'jp1':
+        uri = Uri.parse("https://jp1.api.riotgames.com/tft/summoner/v1/summoners/by-name/" + summonerName + "?api_key=" + _key);
+        break;
+      case 'kr':
+        uri = Uri.parse("https://kr.api.riotgames.com/tft/summoner/v1/summoners/by-name/" + summonerName + "?api_key=" + _key);
+        break;
+      case 'na1':
+        uri = Uri.parse("https://na1.api.riotgames.com/tft/summoner/v1/summoners/by-name/" + summonerName + "?api_key=" + _key);
+        break;
+      case 'oc1':
+        uri = Uri.parse("https://oc1.api.riotgames.com/tft/summoner/v1/summoners/by-name/" + summonerName + "?api_key=" + _key);
+        break;
+      case 'ru':
+        uri = Uri.parse("https://ru.api.riotgames.com/tft/summoner/v1/summoners/by-name/" + summonerName + "?api_key=" + _key);
+        break;
+      case 'tr1':
+        uri = Uri.parse("https://tr1.api.riotgames.com/tft/summoner/v1/summoners/by-name/" + summonerName + "?api_key=" + _key);
+        break;
+    }
+
     var response = await http.get(uri);
+    var code = response.statusCode;
     var finalResponse = json.decode(response.body);
 
-    return finalResponse['puuid'];
+    if(code == 200){
+      Map<String, dynamic> result = Map();
+      result['puuid'] = finalResponse['puuid'];
+      result['summonerLevel'] = finalResponse['summonerLevel'];
+      result['id'] = finalResponse['id'];
+
+      return result;
+    } else{
+      return null;
+    }
+  }
+
+  Future<String> getRank(String id, String region) async {
+    String rank = '';
+    Uri uri;
+
+    switch(region){
+      case 'br1':
+        uri = Uri.parse('https://br1.api.riotgames.com/tft/league/v1/entries/by-summoner/' + id + '?api_key=' + _key);
+        break;
+      case 'eun1':
+        uri = Uri.parse('https://eun1.api.riotgames.com/tft/league/v1/entries/by-summoner/' + id + '?api_key=' + _key);
+        break;
+      case 'euw1':
+        uri = Uri.parse('https://euw1.api.riotgames.com/tft/league/v1/entries/by-summoner/' + id + '?api_key=' + _key);
+        break;
+      case 'jp1':
+        uri = Uri.parse('https://jp1.api.riotgames.com/tft/league/v1/entries/by-summoner/' + id + '?api_key=' + _key);
+        break;
+      case 'kr':
+        uri = Uri.parse('https://kr.api.riotgames.com/tft/league/v1/entries/by-summoner/' + id + '?api_key=' + _key);
+        break;
+      case 'na1':
+        uri = Uri.parse('https://na1.api.riotgames.com/tft/league/v1/entries/by-summoner/' + id + '?api_key=' + _key);
+        break;
+      case 'oc1':
+        uri = Uri.parse('https://oc1.api.riotgames.com/tft/league/v1/entries/by-summoner/' + id + '?api_key=' + _key);
+        break;
+      case 'ru':
+        uri = Uri.parse('https://ru.api.riotgames.com/tft/league/v1/entries/by-summoner/' + id + '?api_key=' + _key);
+        break;
+      case 'tr1':
+        uri = Uri.parse('https://tr1.api.riotgames.com/tft/league/v1/entries/by-summoner/' + id + '?api_key=' + _key);
+        break;
+    }
+
+    var response = await http.get(uri);
+    var finalResponse = json.decode(response.body);
+    for(var details in finalResponse){
+      if(details['queueType'] == 'RANKED_TFT'){
+        rank = '${details['tier']} ${details['rank']}';
+      }else if(details['queueType'] == 'RANKED_TFT_TURBO'){
+        rank = '${details['ratedTier']} ${details['ratedRating']}';
+      }
+  }
+    return rank;
   }
 
   Future<List<String>> getMatches(String puuid, String region) async{
@@ -69,10 +155,12 @@ class ApiCalls{
         player['total_damage_to_players'] = participant['total_damage_to_players'];
         player['placement'] = participant['placement'];
         for(var trait in participant['traits']){
-          traits.add(Trait(name: trait['name'], style: trait['style']));
+          String name = trait['name'].substring(5);
+          traits.add(Trait(name: name, style: trait['style']));
         }
         for(var unit in participant['units']){
-          units.add(Unit(name: unit['character_id'], tier: unit['tier']));
+          String name = unit['character_id'].substring(5);
+          units.add(Unit(name: name, tier: unit['tier']));
         }
         player['traits'] = traits;
         player['units'] = units;
