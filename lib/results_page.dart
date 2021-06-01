@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_page_transition/flutter_page_transition.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tft_gg/info.dart';
 import 'package:tft_gg/main.dart';
 
@@ -14,6 +16,35 @@ class ResultsPage extends StatefulWidget {
 }
 
 class _ResultsPageState extends State<ResultsPage> {
+
+  var bannerAd;
+
+  @override
+  void initState() {
+    super.initState();
+    final adState = context.read(adStateProvider);
+    bannerAd = BannerAd(
+        size: AdSize.largeBanner,
+        adUnitId: adState.bannerAdUnitId,
+        listener: adState.listener,
+        request: AdRequest()
+    )..load();
+  }
+
+  @override
+  void didChangeDependencies() {
+    final adState = context.read(adStateProvider);
+    adState.initialization.then((value){
+      bannerAd = BannerAd(
+          size: AdSize.largeBanner,
+          adUnitId: adState.bannerAdUnitId,
+          listener: adState.listener,
+          request: AdRequest()
+      )..load();
+    });
+  }
+
+
   @override
   Widget build(BuildContext context) {
 
@@ -117,7 +148,7 @@ class _ResultsPageState extends State<ResultsPage> {
                         children: [
                           Container(
                             width: windowWidth * 0.4,
-                            child: Text('Players eliminated', style: GoogleFonts.spaceGrotesk(fontSize: 20, color: Colors.white), textAlign: TextAlign.center,),
+                            child: Text('Most used pet', style: GoogleFonts.spaceGrotesk(fontSize: 20, color: Colors.white), textAlign: TextAlign.center,),
                           ),
                           Container(
                             width: windowWidth * 0.4,
@@ -128,6 +159,12 @@ class _ResultsPageState extends State<ResultsPage> {
                     )
                   ],
                 ),
+              ),
+              Container(
+                width: windowWidth,
+                height: windowHeight * 0.07,
+                margin: EdgeInsets.only(top: windowHeight * 0.03),
+                child: AdWidget(ad: bannerAd as BannerAd,),
               ),
               //------------------------ placements
               Container(

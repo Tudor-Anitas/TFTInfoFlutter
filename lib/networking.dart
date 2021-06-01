@@ -1,11 +1,12 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:tft_gg/trait.dart';
 import 'package:tft_gg/unit.dart';
 
 class ApiCalls{
-  String _key = 'RGAPI-51f7df00-1077-4e64-979b-971fce3a6c56';
+  String _key = dotenv.env['API_KEY'];
 
   Future<Map<String, dynamic>> getSummoner(String summonerName, String region) async{
     Uri uri; Uri.parse("https://eun1.api.riotgames.com/tft/summoner/v1/summoners/by-name/" + summonerName + "?api_key=" + _key);
@@ -106,17 +107,18 @@ class ApiCalls{
     Uri uri;
     List<String> matchIds = [];
 
-    switch(region){
-      case 'europe':
-        uri = Uri.parse('https://europe.api.riotgames.com/tft/match/v1/matches/by-puuid/' + puuid + '/ids?count=20&api_key=' + _key);
-        break;
-      case 'america':
-        uri = Uri.parse('https://americas.api.riotgames.com/tft/match/v1/matches/by-puuid/' + puuid + '/ids?count=20&api_key=' + _key);
-        break;
-      case 'asia':
-        uri = Uri.parse('https://asia.api.riotgames.com/tft/match/v1/matches/by-puuid/' + puuid + '/ids?count=20&api_key=' + _key);
-        break;
-    }
+    //TODO ====================================
+    // separate regions into europe, america and asia
+    // europe : eun1, euw1, ru?, tr1?
+    // america : na1, br1
+    // asia : kr, jp1, oc1
+    //TODO ====================================
+    if(region == 'eun1' || region == 'euw1' || region == 'ru' || region == ' tr1')
+      uri = Uri.parse('https://europe.api.riotgames.com/tft/match/v1/matches/by-puuid/' + puuid + '/ids?count=20&api_key=' + _key);
+    else if(region == 'na1' || region =='br1')
+      uri = Uri.parse('https://americas.api.riotgames.com/tft/match/v1/matches/by-puuid/' + puuid + '/ids?count=20&api_key=' + _key);
+    else
+      uri = Uri.parse('https://asia.api.riotgames.com/tft/match/v1/matches/by-puuid/' + puuid + '/ids?count=20&api_key=' + _key);
 
     var response = await http.get(uri);
     var finalResponse = json.decode(response.body);
