@@ -1,4 +1,4 @@
-# tft_gg
+# TFTInfo
 
 A application that lets people search users in tft, getting information about their usual traits and champions
 
