@@ -15,17 +15,17 @@ import 'package:tft_gg/unit.dart';
 
 import 'networking.dart';
 
-final adStateProvider = ScopedProvider<AdState>(null);
+//final adStateProvider = ScopedProvider<AdState>(null);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final adsInitialization = MobileAds.instance.initialize();
-  final adState = AdState(initialization: adsInitialization);
-  await dotenv.load(fileName: ".env");
+  //final adsInitialization = MobileAds.instance.initialize();
+  //final adState = AdState(initialization: adsInitialization);
+  //await dotenv.load(fileName: ".env");
   runApp(
       ProviderScope(
         overrides: [
-          adStateProvider.overrideWithValue(adState)
+          //adStateProvider.overrideWithValue(adState)
         ],
         child: MyApp()
       )
@@ -60,31 +60,31 @@ class _SearchPageState extends State<SearchPage> {
 
 
 
-  @override
-  void initState() {
-    super.initState();
-    final adState = context.read(adStateProvider);
-    bannerAd = BannerAd(
-        size: AdSize.largeBanner,
-        adUnitId: adState.bannerAdUnitId,
-        listener: adState.listener,
-        request: AdRequest()
-    )..load();
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   final adState = context.read(adStateProvider);
+  //   bannerAd = BannerAd(
+  //       size: AdSize.largeBanner,
+  //       adUnitId: adState.bannerAdUnitId,
+  //       listener: adState.listener,
+  //       request: AdRequest()
+  //   )..load();
 
-  }
+  // }
 
-  @override
-  void didChangeDependencies() {
-    final adState = context.read(adStateProvider);
-    adState.initialization.then((value){
-      bannerAd = BannerAd(
-        size: AdSize.largeBanner,
-        adUnitId: adState.bannerAdUnitId,
-        listener: adState.listener,
-        request: AdRequest()
-      )..load();
-    });
-  }
+  // @override
+  // void didChangeDependencies() {
+  //   final adState = context.read(adStateProvider);
+  //   adState.initialization.then((value){
+  //     bannerAd = BannerAd(
+  //       size: AdSize.largeBanner,
+  //       adUnitId: adState.bannerAdUnitId,
+  //       listener: adState.listener,
+  //       request: AdRequest()
+  //     )..load();
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -247,12 +247,12 @@ class _SearchPageState extends State<SearchPage> {
                 ),
               ),
               //------------------------ banner ad
-              Container(
-                width: windowWidth,
-                height: windowHeight * 0.07,
-                margin: EdgeInsets.only(top: windowHeight * 0.1),
-                child: AdWidget(ad: bannerAd as BannerAd,),
-              )
+              // Container(
+              //   width: windowWidth,
+              //   height: windowHeight * 0.07,
+              //   margin: EdgeInsets.only(top: windowHeight * 0.1),
+              //   child: AdWidget(ad: bannerAd as BannerAd,),
+              // )
             ],
           ),
         ),
@@ -342,6 +342,10 @@ class _SearchPageState extends State<SearchPage> {
 
     print('players eliminated $playersEliminated');
     print('total damage $dmgToPlayers');
+    for(var trait in playerInfo.traits.entries){
+        print('${trait.value.name}_${trait.value.count}');
+    }
+    
 
 
     Navigator.pushReplacement(context, PageTransition(child: ResultsPage(playerInfo: playerInfo,), type: PageTransitionType.rippleLeftDown));

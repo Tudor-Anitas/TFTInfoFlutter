@@ -19,30 +19,30 @@ class _ResultsPageState extends State<ResultsPage> {
 
   var bannerAd;
 
-  @override
-  void initState() {
-    super.initState();
-    final adState = context.read(adStateProvider);
-    bannerAd = BannerAd(
-        size: AdSize.largeBanner,
-        adUnitId: adState.bannerAdUnitId,
-        listener: adState.listener,
-        request: AdRequest()
-    )..load();
-  }
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   final adState = context.read(adStateProvider);
+  //   bannerAd = BannerAd(
+  //       size: AdSize.largeBanner,
+  //       adUnitId: adState.bannerAdUnitId,
+  //       listener: adState.listener,
+  //       request: AdRequest()
+  //   )..load();
+  // }
 
-  @override
-  void didChangeDependencies() {
-    final adState = context.read(adStateProvider);
-    adState.initialization.then((value){
-      bannerAd = BannerAd(
-          size: AdSize.largeBanner,
-          adUnitId: adState.bannerAdUnitId,
-          listener: adState.listener,
-          request: AdRequest()
-      )..load();
-    });
-  }
+  // @override
+  // void didChangeDependencies() {
+  //   final adState = context.read(adStateProvider);
+  //   adState.initialization.then((value){
+  //     bannerAd = BannerAd(
+  //         size: AdSize.largeBanner,
+  //         adUnitId: adState.bannerAdUnitId,
+  //         listener: adState.listener,
+  //         request: AdRequest()
+  //     )..load();
+  //   });
+  // }
 
 
   @override
@@ -160,12 +160,12 @@ class _ResultsPageState extends State<ResultsPage> {
                   ],
                 ),
               ),
-              Container(
-                width: windowWidth,
-                height: windowHeight * 0.07,
-                margin: EdgeInsets.only(top: windowHeight * 0.03),
-                child: AdWidget(ad: bannerAd as BannerAd,),
-              ),
+              // Container(
+              //   width: windowWidth,
+              //   height: windowHeight * 0.07,
+              //   margin: EdgeInsets.only(top: windowHeight * 0.03),
+              //   child: AdWidget(ad: bannerAd as BannerAd,),
+              // ),
               //------------------------ placements
               Container(
                 width: windowWidth,
